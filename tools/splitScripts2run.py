@@ -22,6 +22,15 @@ FORMAT = '%(levelname)s %(asctime)-15s %(name)-20s %(message)s'
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
+def create_dirs(dirlist):
+    if not isinstance(dirlist, list):
+        dirlist = [dirlist]
+    for dirname in dirlist:
+        if not os.path.isdir(dirname):
+            logger.info("Creating directory %s" % (dirname))
+            os.makedirs(dirname)
+        else:
+            logger.info("Directory %s exists" % (dirname))
 
 def delete_file(file_path):
     if os.path.exists(file_path):
@@ -38,6 +47,7 @@ def split_list(lst, n):
     return [lst[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n)]
 
 def split_cmd(cmd_file,num_of_cores, num_of_cmd, prefix="work"):
+    create_dirs(['log'])
     with open(cmd_file, 'r') as f:
         lines = [line.strip() for line in f.readlines()]
         # split the cmd lines into N parts
@@ -62,7 +72,9 @@ def split_cmd(cmd_file,num_of_cores, num_of_cmd, prefix="work"):
                         print(f"echo 'Processing {cmd} is going and pls wait...'", file=f)
                         
                     for cmd in current_chunk:
-                        print(f"{cmd} &", file=f)
+                        sample_name = cmd.split('/')[-2]
+                        # print(f"{cmd} && echo '{sample_name} has been done > log/{sample_name}.log' &", file=f)
+                        print(f"{cmd} && echo '{sample_name} done' > log/{sample_name}.log || echo '{sample_name} undone' > log/{sample_name}.log &", file=f)
                     print("wait", file=f)
                     print("sleep 1", file=f)
                     

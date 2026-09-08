@@ -35,8 +35,8 @@ def main():
                     stats['raw']['threshold_counts'][t] += 1
 
             # --- 2. 过滤逻辑与统计过滤后数据 ---
-            # 这里的过滤条件：深度 >= min_count 且 甲基化率 > 0
-            if (total >= args.min_count) and methylation_rate > 0:
+            # 这里的过滤条件：深度 >= min_count 
+            if (total >= args.min_count):# and methylation_rate > 0
                 # 写入 bedGraph (注意：保持您原本的 0-based start 转换)
                 outf.write(f'{chromosome}\t{int(start)-1}\t{int(end)}\t{methylation_rate}\n')
                 
@@ -52,7 +52,7 @@ def main():
         sf.write("Category\tMetric\tValue\n")
         
         for group in ['raw', 'filtered']:
-            group_name = "Raw_Data" if group == 'raw' else "Filtered_Data"
+            group_name = "all CpG Sites" if group == 'raw' else "CpG Sites(DP>5)"
             total_sites = stats[group]['total_sites']
             total_depth = stats[group]['total_depth']
             

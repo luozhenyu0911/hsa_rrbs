@@ -3,7 +3,7 @@ from pathlib import Path
 
 rule link_clean_fq1:
     input:
-        config['samples']['clean_fq1_path']
+        config['samples']['raw_fq1']
     output:
         "data/{id}.R1.fq.gz"
     run:
@@ -11,48 +11,75 @@ rule link_clean_fq1:
 
 rule link_clean_fq2:
     input:
-        config['samples']['clean_fq2_path']
+        config['samples']['raw_fq2']
     output:
         "data/{id}.R2.fq.gz"
     run:
         shell("ln -s {input} {output}")
 
-# remove human seq. against hg38
-rule qc_fastqc:
+rule qc_trim:
     input:
         fq1 = "data/{id}.R1.fq.gz",
         fq2 = "data/{id}.R2.fq.gz"
     output:
-        R1_html = "01.qc_fastqc/{id}.R1_fastqc.html",
-        R2_html = "01.qc_fastqc/{id}.R2_fastqc.html"
+        fq1 = "01.qc/{id}_val_1.fq.gz",
+        fq2 = "01.qc/{id}_val_2.fq.gz",
+        R1_html = "01.qc/{id}_val_1_fastqc.html",
+        R2_html = "01.qc/{id}_val_2_fastqc.html"
     threads:
         config['threads']
+    params:
+        dir = "01.qc/"
     shell:
-        "time fastqc -t {threads} -o 01.qc_fastqc/ {input.fq1} {input.fq2}"
+        """
+        time trim_galore \
+            --paired \
+            --rrbs \
+            --quality 20 \
+            --stringency 3 \
+            --length 20 \
+            --cores {threads} \
+            --fastqc_args '--threads {threads}' \
+            --basename {wildcards.id} \
+            -o {params.dir} \
+            {input.fq1} {input.fq2}
+        """
+
+# rule qc_fastqc:
+#     input:
+#         fq1 = "data/{id}.R1.fq.gz",
+#         fq2 = "data/{id}.R2.fq.gz"
+#     output:
+#         R1_html = "01.qc/{id}.R1_fastqc.html",
+#         R2_html = "01.qc/{id}.R2_fastqc.html"
+#     threads:
+#         config['threads']
+#     shell:
+#         "time fastqc -t {threads} -o 01.qc/ {input.fq1} {input.fq2}"
 
 rule qc_multiqc:
     input:
-        R1_html = "01.qc_fastqc/{id}.R1_fastqc.html",
-        R2_html = "01.qc_fastqc/{id}.R2_fastqc.html"
+        R1_html = "01.qc/{id}_val_1_fastqc.html",
+        R2_html = "01.qc/{id}_val_2_fastqc.html"
     output:
-        multiqc_html = "01.qc_fastqc/{id}.multiqc.html"
+        multiqc_html = "01.qc/{id}.multiqc.html"
     threads:
         config['threads']
     params:
         filename = '{id}.multiqc'
     shell:
         """
-        time multiqc 01.qc_fastqc/ -o 01.qc_fastqc/ -n {params.filename} && rm -rf {wildcards.id}.multiqc_data && rm -f {wildcards.id}.R*_fastqc.zip
+        time multiqc 01.qc/ -o 01.qc/ -n {params.filename} && rm -f 01.qc/{wildcards.id}_val_*.fq.gz && rm -rf 01.qc/{wildcards.id}.multiqc_data && rm -f 01.qc/{wildcards.id}*_fastqc.zip 
         """
 
 rule mapping2lambda:
     input:
-        fq1 = "data/{id}.R1.fq.gz",
-        fq2 = "data/{id}.R2.fq.gz",
+        fq1 = "01.qc/{id}_val_1.fq.gz",
+        fq2 = "01.qc/{id}_val_2.fq.gz",
         lambda_REF = config['params']['ref_lambda']  # 确保此路径存在且是索引文件夹
     output:
-        report = "04.metrics/{id}_lambda_PE_report.txt",
-        bam = "04.metrics/{id}_lambda_pe.bam"
+        report = "04.metrics/{id}_lambda_PE_report.txt"
+        # bam = "04.metrics/{id}_lambda_pe.bam"
     threads:
         config['threads']
     params:
@@ -60,17 +87,19 @@ rule mapping2lambda:
         prefix = "{id}_lambda"
     shell:
         """
+        time seqtk sample -s100 {input.fq1} 0.01 |gzip > 04.metrics/{wildcards.id}.R1.fq.gz && \
+        time seqtk sample -s100 {input.fq2} 0.01 |gzip > 04.metrics/{wildcards.id}.R2.fq.gz && \
         time bismark --bowtie2 -p {threads} --output_dir {params.output_dir} \
             --basename {params.prefix} --temp_dir {params.output_dir} \
             {input.lambda_REF} \
-            -1 {input.fq1} -2 {input.fq2} \
-        && rm -f {output.bam}
+            -1 04.metrics/{wildcards.id}.R1.fq.gz -2 04.metrics/{wildcards.id}.R2.fq.gz \
+        && rm -f 04.metrics/{wildcards.id}_lambda_pe.bam && rm -f 04.metrics/{wildcards.id}.R*.fq.gz
         """
 
 rule mapping2hg38:
     input:
-        fq1 = "data/{id}.R1.fq.gz",
-        fq2 = "data/{id}.R2.fq.gz",
+        fq1 = "01.qc/{id}_val_1.fq.gz",
+        fq2 = "01.qc/{id}_val_2.fq.gz",
         REF = config['params']['ref_hg38']
     output:
         report = "02.bismark_bt2/{id}_PE_report.txt",
@@ -100,9 +129,11 @@ rule extract_methylation:
     shell:
         """
         time bismark_methylation_extractor --gzip --bedGraph --no_overlap --comprehensive \
+        --parallel {threads} \
         --genome_folder {input.REF} \
-        --parallel {threads} -o 03.methylation \
+        -o 03.methylation \
         {input.bam}
+        # && rm -f {input.bam}
         """
 
 rule extract_5x_bedGraph:
@@ -115,6 +146,6 @@ rule extract_5x_bedGraph:
         tools = config['params']['tools']
     shell:
         """
-        time python {params.tools}/cov2bedGraph.py -r {input.cov} -b {output.bedgraph} -s {output.stat_file}
+        time python {params.tools}/cov2bedGraph.py -r {input.cov} -b {output.bedgraph} -s {output.stat_file} && rm -f 03.methylation/*_pe.txt.gz
         """
 

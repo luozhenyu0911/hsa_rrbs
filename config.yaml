@@ -1,9 +1,7 @@
 samples:
     id: "00113101136M39BFF2"
-    # clean_fq1_path: "/XYFS01/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_1/Project/20251217_methylation/AG20250228R1-256hsa-K/RawData/00113101136M39BFF2/00113101136M39BFF2.1.fq.gz"
-    # clean_fq2_path: "/XYFS01/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_1/Project/20251217_methylation/AG20250228R1-256hsa-K/RawData/00113101136M39BFF2/00113101136M39BFF2.2.fq.gz"
-    clean_fq1_path: "/XYFS02/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/Project/test_snakemake/R1.fq.gz"
-    clean_fq2_path: "/XYFS02/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/Project/test_snakemake/R2.fq.gz"
+    raw_fq1: "/XYFS02/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/Project/test_snakemake/R1.fq.gz"
+    raw_fq2: "/XYFS02/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/Project/test_snakemake/R2.fq.gz"
 params:
     smk_path: "/XYFS01/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/rrbs/smkfiles" 
     tools: "/XYFS01/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/rrbs/tools" 
