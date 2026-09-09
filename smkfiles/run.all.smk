@@ -5,14 +5,17 @@ configfile: "config.yaml"
 def run_all_input(wildcards):
 
     run_all_files = []
-    run_all_files.append("01.qc/{}.multiqc.html".format(config['samples']['id']))
-    # run_all_files.append("04.metrics/{}_lambda_PE_report.txt".format(config['samples']['id']))
-    # run_all_files.append("04.metrics/{}_conversion_rate.txt".format(config['samples']['id']))
+    # run_all_files.append("01.qc/{}.multiqc.html".format(config['samples']['id']))
+    run_all_files.append("04.metrics/{}_lambda_PE_report.txt".format(config['samples']['id']))
+    run_all_files.append("04.metrics/{}_conversion_rate.txt".format(config['samples']['id']))
+    run_all_files.append("{}_sum_info.txt".format(config['samples']['id']))
 
-    run_all_files.append("03.methylation/{}_pe.bismark.cov.gz".format(config['samples']['id']))
-    run_all_files.append("03.methylation/{}.CG_5x.bedgraph.gz".format(config['samples']['id']))
-    run_all_files.append("04.metrics/{}.CG_depth.stat.txt".format(config['samples']['id']))
-    run_all_files.append("02.bismark_bt2/{}_pe.cram".format(config['samples']['id']))
+
+    # run_all_files.append("03.methylation/{}_pe.bismark.cov.gz".format(config['samples']['id']))
+    # run_all_files.append("03.methylation/{}_pe_splitting_report.txt".format(config['samples']['id']))
+    # run_all_files.append("03.methylation/{}.CG_5x.bedgraph.gz".format(config['samples']['id']))
+    # run_all_files.append("04.metrics/{}.CG_depth.stat.txt".format(config['samples']['id']))
+    # run_all_files.append("02.bismark_bt2/{}_pe.cram".format(config['samples']['id']))
 
 
     return run_all_files

@@ -1,12 +1,23 @@
 
 rule summary_conversion_rate:
     input:
-        "04.metrics/{id}_lambda_PE_report.txt"
+        inputf1 = "04.metrics/{id}_lambda_PE_report.txt",
+        inputf2 = "03.methylation/{id}_pe_splitting_report.txt"
     output:
         "04.metrics/{id}_conversion_rate.txt"
     shell:
         """
-        time python3 /XYFS01/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/rrbs/tools/calcu_conversion_rate.py {input} {output}
+        time python3 /XYFS01/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/rrbs/tools/calcu_conversion_rate.py {input.inputf1} {input.inputf2} {output}
+        """
+
+rule summary_information:
+    input:
+        "04.metrics/{id}_conversion_rate.txt"
+    output:
+        "{id}_sum_info.txt"
+    shell:
+        """
+        time python3 /XYFS01/HDD_POOL/gzfezx_shhli/gzfezx_shhlixy_2/BIGDATA2/gzfezx_shhli_2/USER/luozhenyu/script/rrbs/tools/sum_info.py -s {wildcards.id} -o {output}
         """
 
 rule bam2cram:

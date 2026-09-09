@@ -45,17 +45,17 @@ rule qc_trim:
             {input.fq1} {input.fq2}
         """
 
-# rule qc_fastqc:
-#     input:
-#         fq1 = "data/{id}.R1.fq.gz",
-#         fq2 = "data/{id}.R2.fq.gz"
-#     output:
-#         R1_html = "01.qc/{id}.R1_fastqc.html",
-#         R2_html = "01.qc/{id}.R2_fastqc.html"
-#     threads:
-#         config['threads']
-#     shell:
-#         "time fastqc -t {threads} -o 01.qc/ {input.fq1} {input.fq2}"
+rule qc_fastqc:
+    input:
+        fq1 = "data/{id}.R1.fq.gz",
+        fq2 = "data/{id}.R2.fq.gz"
+    output:
+        R1_html = "01.qc/{id}.R1_fastqc.html",
+        R2_html = "01.qc/{id}.R2_fastqc.html"
+    threads:
+        config['threads']
+    shell:
+        "time fastqc -t {threads} -o 01.qc/ {input.fq1} {input.fq2}"
 
 rule qc_multiqc:
     input:
@@ -74,8 +74,10 @@ rule qc_multiqc:
 
 rule mapping2lambda:
     input:
-        fq1 = "01.qc/{id}_val_1.fq.gz",
-        fq2 = "01.qc/{id}_val_2.fq.gz",
+        # fq1 = "01.qc/{id}_val_1.fq.gz",
+        # fq2 = "01.qc/{id}_val_2.fq.gz",
+        fq1 = "data/{id}.R1.fq.gz",
+        fq2 = "data/{id}.R2.fq.gz",
         lambda_REF = config['params']['ref_lambda']  # 确保此路径存在且是索引文件夹
     output:
         report = "04.metrics/{id}_lambda_PE_report.txt"
@@ -87,8 +89,9 @@ rule mapping2lambda:
         prefix = "{id}_lambda"
     shell:
         """
-        time seqtk sample -s100 {input.fq1} 0.01 |gzip > 04.metrics/{wildcards.id}.R1.fq.gz && \
-        time seqtk sample -s100 {input.fq2} 0.01 |gzip > 04.metrics/{wildcards.id}.R2.fq.gz && \
+        time seqtk sample -s100 {input.fq1} 5000000 |gzip > 04.metrics/{wildcards.id}.R1.fq.gz & \
+        time seqtk sample -s100 {input.fq2} 5000000 |gzip > 04.metrics/{wildcards.id}.R2.fq.gz & \
+        wait && \
         time bismark --bowtie2 -p {threads} --output_dir {params.output_dir} \
             --basename {params.prefix} --temp_dir {params.output_dir} \
             {input.lambda_REF} \
@@ -121,7 +124,7 @@ rule extract_methylation:
         bam = "02.bismark_bt2/{id}_pe.bam",
         REF = config['params']['ref_hg38']
     output:
-        # report = "03.methylation/{id}_pe.CpG_report.txt.gz",
+        # report = "03.methylation/{id}_pe_splitting_report.txt",
         bedgraph = "03.methylation/{id}_pe.bedGraph.gz",
         cov = "03.methylation/{id}_pe.bismark.cov.gz"
     threads:
